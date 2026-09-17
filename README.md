@@ -1,6 +1,6 @@
 <div align="center">
 
-<img width="100%" alt="header" src="https://capsule-render.vercel.app/api?type=waving&height=210&text=Nautilus%20Bot&fontAlign=50&fontAlignY=36&fontSize=56&desc=Auto%20Mining%20%7C%20Feed%20%26%20Claim%20%7C%20Daily%20Check%20In%20%7C%20Auto%20Tasks%20%7C%20Ad%20Missions%20%7C%20Multi-Account&descAlign=50&descAlignY=58"/>
+<img width="100%" alt="header" src="https://capsule-render.vercel.app/api?type=waving&height=210&text=Nautilus%20Mine%20Bot&fontAlign=50&fontAlignY=36&fontSize=56&desc=Auto%20Mining%20%7C%20Feed%20Claim%20%7C%20Daily%20Check%20In%20%7C%20Auto-Task&descAlign=50&descAlignY=58"/>
 
 <img alt="typing" src="https://readme-typing-svg.demolab.com?font=Inter&size=18&duration=3000&pause=650&center=true&vCenter=true&width=900&lines=Auto+Mining+%7C+Start+Session+Claim+and+Restart;Auto+Daily+Check+In+%7C+Streak+Rewards+Every+Day;Auto+Tasks+%7C+Every+Task+Except+Telegram+Channels;Auto+Ad+Missions+%7C+Worked+Until+The+Daily+Maximum;Proxy+Support+%7C+Multi-Account"/>
 
