@@ -1,17 +1,10 @@
 import std/[json, os, strutils]
-import support/[banner, cfg, log]
+import support/[banner, cfg, log, signal]
 import net/[client, egress]
 import ops/[account, tasks, ads, mining]
 
 const PROJECT = "Nautilus Miniapp"
 const BASE_URL = "https://nautilus.onelabs.online"
-
-var stopRequested = false
-
-proc installSignal() =
-  setControlCHook(proc() {.noconv.} =
-    stopRequested = true
-  )
 
 proc processAccount(initData, proxy: string) =
   let session = newSession(BASE_URL, initData, proxy)
@@ -29,11 +22,11 @@ proc processAccount(initData, proxy: string) =
     runTasks(session)
     runAdMissions(session, settings, language, isPremium)
     runAds(session, settings, language, isPremium)
-    runMining(session, settings, balanceOf(user))
+    runMining(session, settings, language, isPremium, balanceOf(user))
     runCheckin(session)
     let fresh = refresh(session)
     runInviteTasks(session, fresh)
-    green("Cycle closed for account " & session.label & " with a balance of " & $int(balanceOf(fresh)) & " coins")
+    green("Cycle closed with a balance of " & $int(balanceOf(fresh)) & " coins")
   except CatchableError:
     red("Account " & session.label & " was skipped after an unexpected error")
   finally:
