@@ -52,7 +52,7 @@ proc runInviteTasks*(session: Session, user: JsonNode) =
         %*{"userId": session.userId, "taskIndex": index})
       if claimCode == 200 and boolOf(claimNode, "success", false):
         inc claimed
-        green("Invite task " & cleanText(valueOf(entry, "title"), "task") & " was claimed for " & $intOf(entry, "reward", 0) & " coins on this account")
+        green("Invite task " & valueOf(entry, "title", "task") & " was claimed for " & $intOf(entry, "reward", 0) & " coins on this account")
     inc index
   if claimed == 0 and invites > 0:
     yellow("No invite task is claimable yet because the invite count is low")

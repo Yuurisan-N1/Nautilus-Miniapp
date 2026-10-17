@@ -42,7 +42,7 @@ proc runAdMissions*(session: Session, settings: JsonNode, language: string,
     let missionId = valueOf(mission, "id")
     if missionId.len == 0:
       continue
-    let label = cleanText(valueOf(mission, "label"), "Ad mission")
+    let label = valueOf(mission, "label", "Ad mission")
     var (code, node) = session.callJson("POST", "/api/tasks/complete-ad-task",
       %*{"userId": session.userId, "taskId": missionId})
     if code != 200 or not boolOf(node, "success", false):

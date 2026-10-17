@@ -5,7 +5,6 @@ import ../support/log
 const POLL_ROUNDS = 6
 const POLL_PAUSE = 2
 const UNVERIFIED_LIMIT = 3
-const AD_PAUSE = 12
 
 proc adStatus(session: Session): JsonNode =
   let (code, node) = session.callJson("GET", "/api/ads/status/" & session.userId)
@@ -53,8 +52,7 @@ proc runAds*(session: Session, settings: JsonNode, language: string, isPremium: 
       yellow("Ad view number " & $(unverified) & " returned no credit from the ad network on this run")
       if unverified >= UNVERIFIED_LIMIT:
         break
-    if watched < perDay:
-      countdown(AD_PAUSE, "Next ad view starts in")
+
 
   let gained = watched - before
   if gained > 0:
