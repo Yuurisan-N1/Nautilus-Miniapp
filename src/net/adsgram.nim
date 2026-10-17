@@ -1,9 +1,18 @@
-import std/[algorithm, base64, httpclient, json, net, re, strutils, uri]
+import std/[algorithm, base64, httpclient, json, net, strutils, uri]
 import ./client
 
 const ADV_HOST = "https://api.adsgram.ai/adv"
-let EVENT_PATTERN = re"""https://api\.adsgram\.ai/event\?[^\s"'<>\\]+"""
+const EVENT_PREFIX = "https://api.adsgram.ai/event?"
 const EVENT_ORDER = ["show", "start", "render", "complete", "Reward"]
+
+proc eventUrls(raw: string): seq[string] =
+  var start = raw.find(EVENT_PREFIX)
+  while start >= 0:
+    var stop = start
+    while stop < raw.len and raw[stop] notin {'"', '\'', '<', '>', '\\', ' ', '\n', '\r', '\t'}:
+      inc stop
+    result.add(raw[start ..< stop])
+    start = raw.find(EVENT_PREFIX, stop)
 
 proc checkString(initData: string): string =
   var pairs: seq[string]
@@ -55,11 +64,12 @@ proc serveAd*(session: Session, blockId, language: string, isPremium: bool): tup
   })
   var raw = ""
   var banners = 0
-  let adClient = newHttpClient(timeout = 30000, userAgent = USER_AGENT)
+  let adClient = newHttpClient(timeout = 30000)
   adClient.headers = newHttpHeaders({
     "accept": "*/*",
     "origin": session.base,
-    "referer": session.base & "/"
+    "referer": session.base & "/",
+    "user-agent": "Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Mobile Safari/537.36"
   })
   try:
     let response = adClient.get(ADV_HOST & "?" & query)
@@ -75,7 +85,7 @@ proc serveAd*(session: Session, blockId, language: string, isPremium: bool): tup
     return (false, 0, 0)
 
   var urls: seq[string]
-  for found in findAll(raw, EVENT_PATTERN):
+  for found in eventUrls(raw):
     let kind = typeOfEvent(found)
     if kind.len == 0:
       continue

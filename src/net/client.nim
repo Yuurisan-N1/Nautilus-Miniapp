@@ -1,8 +1,5 @@
 import std/[httpclient, json, net, os, strutils, uri]
 
-const USER_AGENT* = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " &
-  "(KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36 Edg/152.0.0.0"
-
 type
   Session* = ref object
     client*: HttpClient
@@ -35,23 +32,48 @@ proc accountLabel*(initData: string): string =
       return user[key].getStr()
   return "Unknown"
 
+when defined(ssl):
+  proc caFile(): string =
+    let fromEnv = getEnv("SSL_CERT_FILE")
+    if fromEnv.len > 0 and fileExists(fromEnv):
+      return fromEnv
+    for folder in [getAppDir(), getCurrentDir()]:
+      let candidate = folder / "cacert.pem"
+      if fileExists(candidate):
+        return candidate
+    return ""
+
 proc newSession*(base: string, initData: string, proxy: string): Session =
   var client: HttpClient
-  if proxy.len > 0:
-    let parsed = parseUri(proxy)
-    var auth = ""
-    if parsed.username.len > 0:
-      auth = parsed.username & ":" & parsed.password
-    let target = parsed.scheme & "://" & parsed.hostname & ":" & $parsed.port
-    client = newHttpClient(proxy = newProxy(target, auth), timeout = 40000,
-      userAgent = USER_AGENT)
+  when defined(ssl):
+    let ca = caFile()
+    let context = if ca.len > 0: newContext(caFile = ca) else: newContext()
+    if proxy.len > 0:
+      let parsed = parseUri(proxy)
+      var auth = ""
+      if parsed.username.len > 0:
+        auth = parsed.username & ":" & parsed.password
+      let target = parsed.scheme & "://" & parsed.hostname & ":" & $parsed.port
+      client = newHttpClient(proxy = newProxy(target, auth), timeout = 40000,
+        sslContext = context)
+    else:
+      client = newHttpClient(timeout = 40000, sslContext = context)
   else:
-    client = newHttpClient(timeout = 40000, userAgent = USER_AGENT)
+    if proxy.len > 0:
+      let parsed = parseUri(proxy)
+      var auth = ""
+      if parsed.username.len > 0:
+        auth = parsed.username & ":" & parsed.password
+      let target = parsed.scheme & "://" & parsed.hostname & ":" & $parsed.port
+      client = newHttpClient(proxy = newProxy(target, auth), timeout = 40000)
+    else:
+      client = newHttpClient(timeout = 40000)
   client.headers = newHttpHeaders({
     "accept": "application/json, text/plain, */*",
     "content-type": "application/json",
     "origin": base,
     "referer": base & "/",
+    "user-agent": "Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Mobile Safari/537.36",
     "x-telegram-init-data": initData
   })
   result = Session(client: client, base: base, initData: initData,
