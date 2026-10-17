@@ -1,0 +1,52 @@
+name: Build Release
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build nautilus (${{ matrix.artifact }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: nautilus-linux-x86_64
+            binary: bin/nautilus
+
+          - os: windows-latest
+            artifact: nautilus-windows-x86_64
+            binary: bin/nautilus.exe
+
+          - os: macos-latest
+            artifact: nautilus-macos-aarch64
+            binary: bin/nautilus
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nim
+        uses: jiro4989/setup-nim-action@v2
+        with:
+          nim-version: "2.0.x"
+
+      - name: Install OpenSSL headers (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update -q && sudo apt-get install -y libssl-dev
+
+      - name: Build release binary
+        run: nim c -d:ssl -d:release --opt:speed --hints:off -o:${{ matrix.binary }} src/nautilus.nim
+        shell: bash
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.binary }}
+          retention-days: 90
