@@ -7,6 +7,9 @@ on:
       - master
   workflow_dispatch:
 
+env:
+  NIM_VERSION: 2.0.8
+
 jobs:
   build:
     name: Build nautilus (${{ matrix.artifact }})
@@ -18,35 +21,76 @@ jobs:
           - os: ubuntu-latest
             artifact: nautilus-linux-x86_64
             binary: bin/nautilus
+            upload: bin/nautilus
 
           - os: windows-latest
             artifact: nautilus-windows-x86_64
             binary: bin/nautilus.exe
+            upload: bin/
 
           - os: macos-latest
             artifact: nautilus-macos-aarch64
             binary: bin/nautilus
+            upload: bin/nautilus
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Nim
-        uses: jiro4989/setup-nim-action@v2
-        with:
-          nim-version: "2.0.x"
-
-      - name: Install OpenSSL headers (Linux)
+      - name: Install Nim on Linux
         if: runner.os == 'Linux'
-        run: sudo apt-get update -q && sudo apt-get install -y libssl-dev
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y libssl-dev xz-utils
+          curl -fsSL -o /tmp/nim.tar.xz "https://nim-lang.org/download/nim-${NIM_VERSION}-linux_x64.tar.xz"
+          tar -xJf /tmp/nim.tar.xz -C "$HOME"
+          echo "$HOME/nim-${NIM_VERSION}/bin" >> "$GITHUB_PATH"
+
+      - name: Install Nim on macOS
+        if: runner.os == 'macOS'
+        run: brew install nim
+
+      - name: Install Nim on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          curl.exe -fsSL -o nim.zip "https://nim-lang.org/download/nim-${env:NIM_VERSION}_x64.zip"
+          Expand-Archive -Path nim.zip -DestinationPath . -Force
+          "$PWD\nim-${env:NIM_VERSION}\bin" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+
+      - name: Show toolchain
+        run: nim --version
+        shell: bash
 
       - name: Build release binary
-        run: nim c -d:ssl -d:release --opt:speed --hints:off -o:${{ matrix.binary }} src/nautilus.nim
+        run: |
+          mkdir -p bin
+          nim c -d:ssl -d:release --opt:speed --hints:off -o:${{ matrix.binary }} src/nautilus.nim
+        shell: bash
+
+      - name: Bundle Windows runtime
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $root = "$PWD\nim-${env:NIM_VERSION}\bin"
+          Copy-Item "$root\libcrypto-1_1-x64.dll" "bin\" -Force
+          Copy-Item "$root\libssl-1_1-x64.dll" "bin\" -Force
+          Copy-Item "$root\cacert.pem" "bin\" -Force
+          Get-ChildItem bin | Select-Object Name, Length
+
+      - name: Smoke test binary
+        run: |
+          test -s "${{ matrix.binary }}"
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            ls -l bin/
+          else
+            file "${{ matrix.binary }}"
+          fi
         shell: bash
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: ${{ matrix.binary }}
+          path: ${{ matrix.upload }}
           retention-days: 90
