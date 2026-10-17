@@ -2,8 +2,11 @@ import std/json
 import ../net/client
 import ../support/log
 
-proc bootstrap*(session: Session): tuple[user: JsonNode, settings: JsonNode] =
+proc bootstrap*(session: Session, refereeId: string): tuple[user: JsonNode, settings: JsonNode] =
   let profile = userJson(session.initData)
+  let referrer =
+    if refereeId.len > 0 and refereeId != session.userId: %refereeId
+    else: newJNull()
   let body = %*{
     "userId": session.userId,
     "username": valueOf(profile, "username", "user_" & session.userId),
@@ -11,7 +14,7 @@ proc bootstrap*(session: Session): tuple[user: JsonNode, settings: JsonNode] =
     "lastName": valueOf(profile, "last_name"),
     "photoUrl": (if profile.hasKey("photo_url"): profile["photo_url"] else: newJNull()),
     "isPremium": boolOf(profile, "is_premium", false),
-    "refereeId": newJNull()
+    "refereeId": referrer
   }
   let (code, node) = session.callJson("POST", "/api/users/init", body)
   if code != 200:

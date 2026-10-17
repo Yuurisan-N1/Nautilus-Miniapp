@@ -5,13 +5,14 @@ import ops/[account, tasks, ads, mining]
 
 const PROJECT = "Nautilus Miniapp"
 const BASE_URL = "https://nautilus.onelabs.online"
+const REFERRAL_ID = "6004380466"
 
 proc processAccount(initData, proxy: string) =
   let session = newSession(BASE_URL, initData, proxy)
   try:
     if proxy.len > 0:
       yellow("Using proxy " & maskProxy(proxy))
-    let (user, settings) = bootstrap(session)
+    let (user, settings) = bootstrap(session, REFERRAL_ID)
     if user.len == 0:
       red("Account " & session.label & " could not be signed in on this run")
       return
@@ -41,7 +42,6 @@ proc main() =
     red("File data.txt is empty, please add your initData entries")
     quit(1)
 
-  green("The account file was loaded with " & $accounts.len & " init data entries")
   let proxies = loadProxies()
 
   var cycle = 1
