@@ -1,4 +1,3 @@
-import std/strutils
 import ./log
 
 const ART = "__   __                _                     _\n" &

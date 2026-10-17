@@ -7,21 +7,6 @@ const
   BOLD* = "\e[1m"
   RESET* = "\e[0m"
 
-const BANNED_CHARS = {
-  '[', ']', '|', '#', '-', '!', '@', '$', '%', '^', '&', '*', '(', ')'
-}
-const BANNED_WIDE = "—–·…﻿"
-
-proc cleanText*(value: string, fallback: string = ""): string =
-  var buf = newStringOfCap(value.len + 8)
-  for ch in value:
-    if ch in BANNED_CHARS or ch in BANNED_WIDE or ch in {'\n', '\r', '\t'}:
-      buf.add(' ')
-    else:
-      buf.add(ch)
-  buf = buf.splitWhitespace().join(" ")
-  if buf.len == 0: fallback else: buf
-
 proc green*(message: string) =
   stdout.writeLine(GREEN & BOLD & message & RESET)
   stdout.flushFile()
@@ -46,9 +31,8 @@ proc countdown*(seconds: int, label: string) =
   if left < 1:
     return
   var width = 0
-  let text = cleanText(label, "Next cycle starts in")
   while left > 0:
-    let frame = text & " " & duration(left)
+    let frame = label & " " & duration(left)
     stdout.write("\r" & YELLOW & BOLD & frame & RESET)
     stdout.flushFile()
     width = max(width, frame.len)
